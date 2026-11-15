@@ -1,3 +1,6 @@
+José David Pérez Pérez
+
+
 # MiniChat
 
 Aplicación de chat mínima con arquitectura **MVC + Observer**, usada en la

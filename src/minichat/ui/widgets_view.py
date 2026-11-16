@@ -8,10 +8,12 @@ from IPython.display import HTML, clear_output, display
 from minichat.core.observer import Observer
 from minichat.controller.chat_controller import ChatController
 from minichat.model.chat_session import ChatSession
+from minichat.model.generation_config import GenerationConfig
 from minichat.model.role import Role
 from minichat.ui.history_html import HistoryHTML
 from minichat.core.events import Events as events
 from minichat.model.message import Message
+from dataclasses import replace
 
 class WidgetsView(Observer):
     """Notebook UI that observes both the session and the controller.
@@ -137,13 +139,13 @@ class WidgetsView(Observer):
             return
 
         if self.role.value == Role.USER.value:
-            self._ctl.set_generation(
-                float(self.temp.value),
-                float(self.topp.value),
-                int(self.topk.value),
-                int(self.maxnt.value),
-                900,
+            cfg = replace(self._ctl.config,
+                temperature=self.temp.value,
+                top_p=self.topp.value,
+                top_k=self.topk.value,
+                max_new_tokens=self.maxnt.value
             )
+            self._ctl.set_generation(cfg)
             self._ctl.send_user(text)
         elif self.role.value == Role.ASSISTANT.value:
             self._ctl.add_assistant(text)

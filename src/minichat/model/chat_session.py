@@ -19,6 +19,12 @@ class ChatSession(Observable):
     Emits events:
         - "messages_updated": fired after any modification.
     """
+    def _last_assistant_text(self) -> str | None:
+        """Return the content of the most recent assistant message, if any."""
+        for m in reversed(self._messages):
+            if m.role == Role.ASSISTANT:
+                return m.content
+        return None
 
     def __init__(self) -> None:
         """Initialize an empty session."""

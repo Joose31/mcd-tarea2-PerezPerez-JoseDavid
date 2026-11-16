@@ -73,50 +73,36 @@ class ChatController(Observable):
         self._cfg = cfg
         self._notify(events.CONFIG_CHANGED, {"cfg": asdict(self._cfg)})
 
-    def send_user(self, text: str) -> None:
-        """Append a user message, ask the backend for a reply and store it.
+    def _generate_reply(self) -> tuple[str, int]:
 
-        Emits:
-            generating_start -> generating_done | generating_error
-            messages_updated on session mutations.
-
-        Raises:
-            ValueError: If text is empty or whitespace.
-        """
-        # 1. Validate input
-        if text is None:
-            text = ""
-        text = text.strip()
-        if len(text) == 0:
-            raise ValueError("text cannot be empty")
-        if len(text) > 2000:
-            text = text[:2000]
-
-        # 2. Store the user turn
-        self._session.add(Role.USER, text)
-        self._notify(events.GENERATING_START, {})
-
-        # 3. Call the backend and measure latency
         started = time.perf_counter()
-        try:
-            reply = self._backend.reply(self._session, self._cfg)
-        except Exception as exc:
-            self._log.exception("Backend error during reply")
-            self._notify(events.GENERATING_ERROR, {"error": str(exc)})
-            return
+        reply = self._backend.reply(self._session, self._cfg)
         elapsed_ms = int((time.perf_counter() - started) * 1000)
+        return reply, elapsed_ms
 
-        # 4. Build metadata for the assistant turn
+    def _build_meta(self, user_text: str, reply_text: str, elapsed_ms: int) -> dict[str, Any]:
+        """Build metadata for the assistant turn."""
         meta: dict[str, Any] = {
             "backend": self._backend.name,
             "gen_cfg": asdict(self._cfg),
             "latency_ms": elapsed_ms,
-            "prompt_chars": len(text),
-            "reply_chars": len(reply),
+            "prompt_chars": len(user_text),
+            "reply_chars": len(reply_text),
         }
+        return meta
+    
+    def send_user(self, text: str) -> None:
+        text = self._normalize_text(text)
+        self._session.add(Role.USER, text)
+        self._notify(events.GENERATING_START, {})
+        try:
+            reply, elapsed_ms = self._generate_reply()
+        except Exception as exc:
+            self._log.exception("Backend error during reply")
+            self._notify(events.GENERATING_ERROR, {"error": str(exc)})
+            return
+        meta = self._build_meta(text, reply, elapsed_ms)
         self._log.debug("reply generated in %d ms", elapsed_ms)
-
-        # 5. Store the assistant turn
         self._session.add(Role.ASSISTANT, reply, meta=meta)
         self._notify(events.GENERATING_DONE, {"reply": reply})
 
@@ -161,3 +147,7 @@ class ChatController(Observable):
     def _validate_text(self, text: Optional[str]) -> str:
         """Return the stripped text, or '' when it is None/blank."""
         return (text or "").strip()
+
+    def _normalize_text(self, text: str) -> str:
+        text = self._validate_text(text)
+        return text[:2000]

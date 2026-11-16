@@ -5,7 +5,7 @@ from typing import Any, Optional
 from minichat.model.message import Message
 from minichat.model.role import Role
 from minichat.core.observable import Observable
-from minichat.core.events import events
+from minichat.core.events import Events as events
 
 
 class ChatSession(Observable):

@@ -1,6 +1,6 @@
 from enum import Enum
 
-class events(str, Enum):
+class Events(str, Enum):
 
     CONFIG_CHANGED = "config_changed"
     GENERATING_START = "generating_start"

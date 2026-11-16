@@ -10,7 +10,8 @@ from minichat.controller.chat_controller import ChatController
 from minichat.model.chat_session import ChatSession
 from minichat.model.role import Role
 from minichat.ui.history_html import HistoryHTML
-from minichat.core.events import events
+from minichat.core.events import Events as events
+from minichat.model.message import Message
 
 class WidgetsView(Observer):
     """Notebook UI that observes both the session and the controller.
@@ -188,12 +189,8 @@ class WidgetsView(Observer):
 
     def _refresh_selector(self) -> None:
         opts: List[Tuple[str, int]] = []
-        for i, m in enumerate(self._session.all()):
-            hhmm = m.timestamp.strftime("%H:%M:%S")
-            text = m.content
-            preview = f"{text[:30]}…" if len(text) > 30 else text
-            label = f"{i}: [{hhmm}] {m.role.value}: {preview}"
-            opts.append((label, i))
+        for i, m in enumerate(self._session.all()): opts.append((f"{i}: {m.summary()}", i))
+            
         self.sel_index.options = opts
         if opts:
             current = self.sel_index.value

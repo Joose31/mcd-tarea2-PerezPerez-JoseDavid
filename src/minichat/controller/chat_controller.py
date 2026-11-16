@@ -11,7 +11,7 @@ from minichat.core.observable import Observable
 from minichat.model.chat_session import ChatSession
 from minichat.model.generation_config import GenerationConfig
 from minichat.model.role import Role
-from minichat.core.events import events
+from minichat.core.events import Events as events
 logger = logging.getLogger(__name__)
 
 
@@ -22,10 +22,10 @@ class ChatController(Observable):
         - events.CONFIG_CHANGED: after updating GenerationConfig
         - events.GENERATING_START: before calling the backend
         - events.GENERATING_DONE: after a reply (payload: {"reply": str})
-        - "generating_error": on backend exception
+        - events.GENERATING_ERROR: on backend exception
           (payload: {"error": str})
-        - "messages_updated": after session mutations
-        - "export_done": after exporting JSON (payload: {"path": str})
+        - events.MESSAGES_UPDATED: after session mutations
+        - events.EXPORT_DONE: after exporting JSON (payload: {"path": str})
     """
 
     def __init__(
